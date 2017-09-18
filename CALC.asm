@@ -48,7 +48,7 @@ INICIO:
 	INT 21H
 ;--------------------------------------------------------------------------------------;
 ;MENU PRINCIPAL  - BASES
-	CALL MENU1		
+	CALL MENU1				;print da escolha da base	
 	                            
 	LEA DX, DECISAO             
 	MOV AH, 9                   
@@ -61,7 +61,7 @@ INICIO:
 	MOV OP, BL                  
 ;--------------------------------------------------------------------------------------;
 ;MENU SECUNDARIO
-	CALL MENU2
+	CALL MENU2				;print da escolha da operação
 	
 	LEA DX, DECISAO
 	MOV AH, 9
@@ -73,15 +73,15 @@ INICIO:
 	
 	MOV OP2, CL
 ;--------------------------------------------------------------------------------------;
-;TRATANDO AS OPCOES DO MENU PRINCIPAL
+;TRATANDO AS OPCOES DO MENU PRINCIPAL (BASE)
 	
-	CMP OP, '1'
+	CMP OP, '1'		;decimal
 	JE D1
 	
-	CMP OP, '2'
+	CMP OP, '2'		;binario
 	JE D2
 	
-	CMP OP, '3'
+	CMP OP, '3'		;hexadecimal
 	JE D3
 	
 	JMP SAIR
@@ -205,8 +205,10 @@ SAIR:
 	
 	CMP CR, 'S'
 	JE AUXINICIO
+	CMP CR, 's'
+	JE AUXINICIO
 	JMP F
-	
+
 AUXINICIO:
 	JMP INICIO
 	
@@ -284,66 +286,136 @@ SAIDECIMAL PROC
 ;variaveis de entrada: AX -> valor binario equivalente do número decimal
 ;variaveis de saida: nehuma (exibição de dígitos direto no monitor de video)
 
-		MOV 	AH,9H
-		LEA 	DX,VAZIO
-		INT 	21H
+		MOV AH,9H
+		LEA DX,VAZIO
+		INT 21H
 		
-		MOV 	AX,BX
+		MOV AX,BX
 		
-		PUSH 	AX
-		PUSH 	BX
-		PUSH 	CX
-		PUSH 	DX 		;salva na pilha os registradores usados
+		PUSH AX
+		PUSH BX
+		PUSH CX
+		PUSH DX 		;salva na pilha os registradores usados
 		
-		OR 		AX,AX 	;prepara comparação de sinal
+		OR 	AX,AX 	;prepara comparação de sinal
 		
-		JGE 	PT1 	;se AX maior ou igual a 0, vai para PT1
+		JGE PT1 	;if AX >= 0, vai para PT1
 		
-		PUSH 	AX 		;como AX menor que 0, salva o número na pilha
-		MOV 	DL,'-'	;prepara o caracter ' - ' para sair
-		MOV 	AH,2h 	;prepara exibição
-		INT 	21h 	;exibe ' - '
+		PUSH AX 		;como AX < 0, salva o número na pilha
+		MOV DL,'-'	;prepara o caracter ' - ' para sair
+		MOV AH,2h 	;prepara exibição
+		INT 21h 	;exibe ' - '
 		
-		POP 	AX 		;recupera o número
-		NEG 	AX 		;troca o sinal de AX (AX = - AX)
+		POP AX 		;recupera o número
+		NEG AX 		;troca o sinal de AX (AX = - AX)
 		
 		;obtendo dígitos decimais e salvando-os temporariamente na pilha
-PT1: 	XOR 	CX,CX 	;inicializa CX como contador de dígitos
-		MOV 	BX,10 	;BX possui o divisor
-PT2: 	XOR 	DX,DX 	;inicializa o byte alto do dividendo em 0; restante é AX
+PT1: 	XOR CX,CX 	;inicializa CX como contador de dígitos
+		MOV BX,10 	;BX possui o divisor
+PT2: 	XOR DX,DX 	;inicializa o byte alto do dividendo em 0; restante é AX
 		
-		DIV 	BX 		;após a execução, AX = quociente; DX = resto
-		PUSH 	DX 		;salva o primeiro dígito decimal na pilha (1o. resto)
+		DIV BX 		;após a execução, AX = quociente; DX = resto
+		PUSH DX 		;salva o primeiro dígito decimal na pilha (1o. resto)
 		
-		INC 	CX 		;contador = contador + 1
-		OR 		AX,AX 	;quociente = 0 ? (teste de parada)
-		JNE 	PT2 	;não, continuamos a repetir o laço
+		INC CX 		;contador = contador + 1
+		OR 	AX,AX 	;quociente = 0 ? (teste de parada)
+		JNE PT2 	;não, continuamos a repetir o laço
 		
 		;exibindo os dígitos decimais (restos) no monitor, na ordem inversa
-		MOV 	AH,2h 	;sim, termina o processo, prepara exibição dos restos
-PT3: 	POP 	DX 		;recupera dígito da pilha colocando-o em DL (DH = 0)
-		ADD 	DL,30h 	;converte valor binário do dígito para caracter ASCII
+		MOV AH,2h 	;sim, termina o processo, prepara exibição dos restos
+PT3: 	POP DX 		;recupera dígito da pilha colocando-o em DL (DH = 0)
+		ADD DL,30h 	;converte valor binário do dígito para caracter ASCII
 		
-		INT 	21h 	;exibe caracter
-		LOOP 	PT3 	;realiza o loop ate que CX = 0
+		INT 21h 	;exibe caracter
+		LOOP PT3 	;realiza o loop ate que CX = 0
 		
-		POP 	DX 		;restaura o conteúdo dos registros
-		POP 	CX
-		POP 	BX
-		POP 	AX 		;restaura os conteúdos dos registradores
+		POP DX 		;restaura o conteúdo dos registros
+		POP CX
+		POP BX
+		POP AX 		;restaura os conteúdos dos registradores
 		RET 			;retorna à rotina que chamou
 SAIDECIMAL ENDP
 ;--------------------------------------------------------------------------------------;
 ;ENTRADA BINARIO
 ENTBINARIO PROC
+	MOV AH, 9H
+	LEA DX, EntradaBinario
+	INT 21H
+	
+	MOV AH,9H
+	LEA DX,VAZIO
+	INT 21H
+	
+	PUSH BX
+	PUSH CX
+	PUSH DX
+	
+	XOR BX, BX
+	
+	MOV CX,16 ;inicializa contador de dígitos
+	MOV AH,1h ;função DOS para entrada pelo teclado
+	XOR BX,BX ;zera BX -> terá o resultado
+	INT 21h ;entra, caracter está no AL
+;while
+TOPO: 
+	CMP AL,0Dh ;é CR?
+	JE SAIDABINARIO ;se sim, termina o WHILE
+	AND AL,0Fh ;se não, elimina 30h do caracter
+;(poderia ser SUB AL,30h)
+	SHL BX,1 ;abre espaço para o novo dígito
+	OR BL,AL ;insere o dígito no LSB de BL
+	INT 21h ;entra novo caracter
+	LOOP TOPO ;controla o máximo de 16 dígitos
+	
+SAIDABINARIO:
+	POP BX
+	SUB CX, 16
+	MOV DX, CX
+	RET
 ENTBINARIO ENDP
+
 SAIBINARIO PROC
+	MOV CX,DX ;inicializa contador de bits
+	MOV AH,02h ;prepara para exibir no monitor
+;for 16 vezes do
+PT1B:
+	ROL BX,1 ;desloca BX 1 casa à esquerda
+;if CF = 1
+	JNC PT2B ;salta se CF = 0
+;then
+	MOV DL, 31h ;como CF = 1
+	INT 21h ;exibe na tela "1" = 31h
+;else
+PT2B: 
+	MOV DL, 30h ;como CF = 0
+	INT 21h ;exibe na tela "0" = 30h
+;end_if
+	LOOP PT1B ;repete 16 vezes
+;end_for
+	POP DX 		;restaura o conteúdo dos registros
+	POP CX
+	POP BX
+	RET 
 SAIBINARIO ENDP
 ;--------------------------------------------------------------------------------------;
 ;ENTRADA HEXADECIMAL
 ENTHEXADECIMAL PROC
+	MOV AH, 9H
+	LEA DX, EntradaHexa
+	INT 21H
+	
+	MOV AH,9H
+	LEA DX,VAZIO
+	INT 21H
+	
+	PUSH BX
+	PUSH CX
+	PUSH DX
+	
 ENTHEXADECIMAL ENDP
 SAIHEXA PROC
+
+
 SAIHEXA ENDP
 ;--------------------------------------------------------------------------------------;
 OP_SOMA PROC
