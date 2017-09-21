@@ -33,7 +33,7 @@ TITLE CALC
 	AUX DW 0
 	OP 	DB 0
 	OP2 DB 0
-	BITS DB 0
+	BIT DB 0
 	CR	DB 0 
 ;--------------------------------------------------------------------------------------;	
 .CODE
@@ -44,6 +44,7 @@ MAIN PROC
 	MOV DS, AX
 	
 INICIO:
+	CALL PULALINHA
 	LEA DX, MSGINTRO
 	MOV AH, 9
 	INT 21H
@@ -214,6 +215,8 @@ SAIR:
 	JMP F
 
 AUXINICIO:
+
+	
 	JMP INICIO
 	
 F:
@@ -372,6 +375,9 @@ ENTBINARIO PROC
 	OR BL,AL
 	INT 21h
 	LOOP TOPO
+	
+
+	MOV BIT,CX
 
 
 	SAIDAB:
@@ -395,6 +401,7 @@ SAIBINARIO PROC
 	MOV CL,1 ;inicializa contador de bits
 	MOV CH,0
 
+	
 	PRINT:
 	CMP CH,16
 	JE FIMB
@@ -609,6 +616,8 @@ SAIDAFINAL PROC
 SAIDAFINAL ENDP
 
 MENU1 PROC
+
+	
 	LEA DX, OPCAO
 	MOV AH, 9
 	INT 21H
@@ -621,6 +630,10 @@ MENU1 PROC
 	
 	LEA DX, HEXA
 	INT 21H
+	
+	
+	
+	
 	
 	RET
 MENU1 ENDP
@@ -663,4 +676,18 @@ MENU2 PROC
 	RET
 MENU2 ENDP
 
+
+PULALINHA PROC
+
+	MOV AH,0Fh
+	INT 10H
+	MOV AH,0
+	INT 10H
+	
+	
+
+	
+	RET
+ENDP
+	
 END
