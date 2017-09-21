@@ -432,13 +432,18 @@ ENTHEXADECIMAL PROC
 
 	XOR BX,BX   ;limpo bx
 	MOV CL,4	;casas que serao deslocadas
+	MOV CH,16
 	MOV AH,1h
 	INT 21h
 
 	GETH:
 	CMP AL,0DH
 	JE SAIDAH
+	OR CH,CH
+	JZ SAIDAH
 
+	SUB CH,4
+	
 	CMP AL,39h ; numero ou letra?
 	JG LETRA
 	AND AL,0Fh
