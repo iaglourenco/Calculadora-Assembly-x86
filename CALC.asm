@@ -429,15 +429,68 @@ ENTHEXADECIMAL PROC
 	MOV AH,9H
 	LEA DX,VAZIO
 	INT 21H
+
+	XOR BX,BX   ;limpo bx
+	MOV CL,4	;casas que serao deslocadas
+	MOV AH,1h
+	INT 21h
+
+	GETH:
+	CMP AL,0DH
+	JE SAIDAH
+
+	CMP AL,39h ; numero ou letra?
+	JG LETRA
+	AND AL,0Fh
+	JMP DESLOCA
+	LETRA:
+	SUB AL,37h
+	DESLOCA:
+	SHL BX,CL
+	OR BL,AL
+	INT 21h
+	JMP GETH
 	
+	SAIDAH:
+	MOV AX,BX
 	PUSH BX
 	PUSH CX
 	PUSH DX
+
+	RET
 	
 ENTHEXADECIMAL ENDP
 
 
 SAIHEXA PROC
+
+	MOV CH,4		;contador de carateres
+	MOV CL,4		;contador de deslocamentos
+	MOV AH,2h
+
+	PRINTH:
+	MOV DL,BH
+
+	SHR DL,CL
+
+	CMP DL,0Ah
+	JAE PLETRAH
+
+	ADD DL,30h
+	JMP VAI
+
+	PLETRAH:
+	ADD DL,37h
+
+	VAI:
+	INT 21h
+	ROL BX,CL
+	DEC CH
+	JNZ PRINTH
+
+	RET
+
+
 
 
 SAIHEXA ENDP
