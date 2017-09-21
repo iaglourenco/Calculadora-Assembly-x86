@@ -33,6 +33,7 @@ TITLE CALC
 	AUX DW 0
 	OP 	DB 0
 	OP2 DB 0
+	BITS DB 0
 	CR	DB 0 
 ;--------------------------------------------------------------------------------------;	
 .CODE
@@ -90,23 +91,26 @@ INICIO:
 ;PROCEDIMENTO DE ENTRADA - NUMEROS DECIMAIS
 D1:
 	CALL ENTDECIMAL
-	MOV N2, AX
+	MOV N2, AX			; UM NUMERO FICA EM N2
+						; E O OUTRO FICA EM AX 			
 	
 	CMP OP2, '3'
 	JE COMPARA
 	CALL ENTDECIMAL
-	MOV BX, AX
+	MOV BX, AX			;MOVENDO PRA BX 
 	
 	JMP COMPARA
 ;--------------------------------------------------------------------------------------;
 ;PROCEDIMENTO DE ENTRADA - NUMEROS BINARIOS
 D2:
 	CALL ENTBINARIO
-	MOV N2, AX
+	MOV N2, AX				; UM NUMERO FICA EM N2
+							; E O OUTRO FICA EM BX 
 	
 	CMP OP2, '3'
 	JE COMPARA
 	CALL ENTBINARIO
+	MOV BX,AX				;PASSANDO O NUMERO PRA BX PARA CALCULAR
 	
 	JMP COMPARA	
 ;--------------------------------------------------------------------------------------;
@@ -219,6 +223,8 @@ F:
 MAIN ENDP
 ;--------------------------------------------------------------------------------------;
 ;ENTRADA DECIMAL
+;numero fica em AX
+
 ENTDECIMAL PROC
 	MOV AH, 9H
 	LEA DX, EntradaDecimal
@@ -345,56 +351,72 @@ ENTBINARIO PROC
 	MOV AH,9H
 	LEA DX,VAZIO
 	INT 21H
+
 	
 	PUSH BX
 	PUSH CX
-	PUSH DX
+	PUSH DX ; limpando tudo
 	
-	XOR BX, BX
-	
-	MOV CX,16 ;inicializa contador de dígitos
-	MOV AH,1h ;função DOS para entrada pelo teclado
-	XOR BX,BX ;zera BX -> terá o resultado
-	INT 21h ;entra, caracter está no AL
-;while
-TOPO: 
-	CMP AL,0Dh ;é CR?
-	JE SAIDABINARIO ;se sim, termina o WHILE
-	AND AL,0Fh ;se não, elimina 30h do caracter
-;(poderia ser SUB AL,30h)
-	SHL BX,1 ;abre espaço para o novo dígito
-	OR BL,AL ;insere o dígito no LSB de BL
-	INT 21h ;entra novo caracter
-	LOOP TOPO ;controla o máximo de 16 dígitos
-	
-SAIDABINARIO:
+	;AX armazena o numero, temporariamente
+	MOV CX,16
+	MOV AH,1h
+	XOR BX,BX
+	INT 21H
+
+	TOPO:
+	CMP AL,0Dh
+	JE SAIDAB
+	AND AL,0Fh
+
+	SHL BX,1
+	OR BL,AL
+	INT 21h
+	LOOP TOPO
+
+
+	SAIDAB:
+	MOV AX,BX
 	POP BX
-	SUB CX, 16
-	MOV DX, CX
+	POP CX
+	POP DX ;restaurando tudo, menos AX com o numero
 	RET
 ENTBINARIO ENDP
 
+
 SAIBINARIO PROC
-	MOV CX,DX ;inicializa contador de bits
+
 	MOV AH,02h ;prepara para exibir no monitor
-;for 16 vezes do
-PT1B:
-	ROL BX,1 ;desloca BX 1 casa à esquerda
-;if CF = 1
-	JNC PT2B ;salta se CF = 0
-;then
-	MOV DL, 31h ;como CF = 1
-	INT 21h ;exibe na tela "1" = 31h
-;else
-PT2B: 
-	MOV DL, 30h ;como CF = 0
-	INT 21h ;exibe na tela "0" = 30h
-;end_if
-	LOOP PT1B ;repete 16 vezes
-;end_for
-	POP DX 		;restaura o conteúdo dos registros
-	POP CX
-	POP BX
+	MOV DL,0AH
+	INT 21H
+	MOV DL,0DH
+	INT 21H
+
+
+	MOV CL,1 ;inicializa contador de bits
+	MOV CH,0
+
+	PRINT:
+	CMP CH,16
+	JE FIMB
+	INC CH
+	ROL BX,CL
+	JC UM		;verifico se CF é 0 ou 1, e printo dependendo dele
+
+	MOV AH,2H
+	MOV DL,30H	;printa 0
+	INT 21H
+	JMP PRINT
+
+
+	UM:
+	MOV AH,2
+	MOV DL,31H		;printa 1
+	INT 21H	
+	JMP PRINT
+
+	FIMB:
+
+
 	RET 
 SAIBINARIO ENDP
 ;--------------------------------------------------------------------------------------;
@@ -413,6 +435,8 @@ ENTHEXADECIMAL PROC
 	PUSH DX
 	
 ENTHEXADECIMAL ENDP
+
+
 SAIHEXA PROC
 
 
