@@ -7,7 +7,8 @@ TITLE CALC
 	OPCAO	DB PL,'	  <Opcoes de Bases>$'                                                                                                                 
 	DECIMAL DB PL,'	  1 -> Decimal$'                                                                                                         
 	BINARIO DB PL,'	  2 -> Binario$'                                                                                                         
-	HEXA 	DB PL,'	  3 -> Hexadecimal$'                                                                                                         
+	HEXA 	DB PL,'	  3 -> Hexadecimal$'
+	OCTAL	DB PL,'	  4 -> Octal$'	
 	OPCAO2 	DB PL,'		<Escolha uma operacao>$'
 	ANDD	DB	PL,'	0. AND$'
 	ORR		DB	PL,'	1. OR$'
@@ -23,6 +24,7 @@ TITLE CALC
 	EntradaDecimal DB PL,'	Entrada em DECIMAL $'                                
 	EntradaHexa	   DB PL,'	Entrada em HEXADECIMAL $'
 	EntradaBinario DB PL,'	Entrada em BINARIO $'
+	EntradaOctal   DB PL,'	Entrada em OCTAL $'
 	Desejavoltar	DB PL,'	Deseja voltar ?(S/N): $'
 	VAZIO	DB PL, '$'
 	
@@ -33,7 +35,6 @@ TITLE CALC
 	AUX DW 0
 	OP 	DB 0
 	OP2 DB 0
-	BIT DB 0
 	CR	DB 0 
 ;--------------------------------------------------------------------------------------;	
 .CODE
@@ -86,6 +87,9 @@ INICIO:
 	CMP OP, '3'		;hexadecimal
 	JE D3
 	
+	CMP OP, '4'   ;octal
+	JE D4
+	
 	JMP SAIR
 	
 ;--------------------------------------------------------------------------------------;
@@ -126,6 +130,17 @@ D3:
 	
 	JMP COMPARA
 ;--------------------------------------------------------------------------------------;	
+;PROCEDIMENTO DE ENTRADA - NUMEROS OCTAL
+D4:
+	CALL ENTOCTAL
+	MOV N2, AX
+	
+	CMP OP2, '3'
+	JE COMPARA
+	CALL ENTOCTAL
+	
+	JMP COMPARA
+;--------------------------------------------------------------------------------------;
 ;ENTRADA PADRONIZADA EM BX
 COMPARA:
 	ANDM:
@@ -215,8 +230,6 @@ SAIR:
 	JMP F
 
 AUXINICIO:
-
-	
 	JMP INICIO
 	
 F:
@@ -299,8 +312,9 @@ SAIDECIMAL PROC
 		LEA DX,VAZIO
 		INT 21H
 		
+	
 		MOV AX,BX
-		
+	
 		PUSH AX
 		PUSH BX
 		PUSH CX
@@ -355,7 +369,6 @@ ENTBINARIO PROC
 	LEA DX,VAZIO
 	INT 21H
 
-	
 	PUSH BX
 	PUSH CX
 	PUSH DX ; limpando tudo
@@ -366,7 +379,7 @@ ENTBINARIO PROC
 	XOR BX,BX
 	INT 21H
 
-	TOPO:
+TOPO:
 	CMP AL,0Dh
 	JE SAIDAB
 	AND AL,0Fh
@@ -376,11 +389,9 @@ ENTBINARIO PROC
 	INT 21h
 	LOOP TOPO
 	
+	
 
-	MOV BIT,CX
-
-
-	SAIDAB:
+SAIDAB:
 	MOV AX,BX
 	POP BX
 	POP CX
@@ -388,9 +399,7 @@ ENTBINARIO PROC
 	RET
 ENTBINARIO ENDP
 
-
 SAIBINARIO PROC
-
 	MOV AH,02h ;prepara para exibir no monitor
 	MOV DL,0AH
 	INT 21H
@@ -402,7 +411,7 @@ SAIBINARIO PROC
 	MOV CH,0
 
 	
-	PRINT:
+PRINT:
 	CMP CH,16
 	JE FIMB
 	INC CH
@@ -415,15 +424,13 @@ SAIBINARIO PROC
 	JMP PRINT
 
 
-	UM:
+UM:
 	MOV AH,2
 	MOV DL,31H		;printa 1
 	INT 21H	
 	JMP PRINT
 
-	FIMB:
-
-
+FIMB:
 	RET 
 SAIBINARIO ENDP
 ;--------------------------------------------------------------------------------------;
@@ -470,9 +477,7 @@ ENTHEXADECIMAL PROC
 	PUSH DX
 
 	RET
-	
 ENTHEXADECIMAL ENDP
-
 
 SAIHEXA PROC
 
@@ -501,11 +506,106 @@ SAIHEXA PROC
 	JNZ PRINTH
 
 	RET
-
-
-
-
 SAIHEXA ENDP
+;--------------------------------------------------------------------------------------;
+;ENTRADA octal
+ENTOCTAL PROC
+	MOV AH, 9H
+	LEA DX, EntradaOctal
+	INT 21H
+	
+	MOV AH,9H
+	LEA DX,VAZIO
+	INT 21H
+
+	PUSH AX
+	PUSH BX
+	PUSH CX
+	PUSH DX
+	
+	XOR CX,CX
+	
+	MOV AH,1H
+	
+	OCT:
+	INT 21H
+	
+	ADD DL,30H
+	
+	
+	
+	
+	
+	
+	
+	
+
+SAIDAOCTAL:
+	POP DX
+	POP CX
+	POP BX
+	
+	RET
+
+ENTOCTAL ENDP
+
+SAIOCTAL PROC
+;exibe o conteudo de CX como decimal inteiro com sinal
+;variaveis de entrada: AX -> valor binario equivalente do número decimal
+;variaveis de saida: nehuma (exibição de dígitos direto no monitor de video)
+
+		MOV AH,9H
+		LEA DX,VAZIO
+		INT 21H
+		
+		MOV AX,BX
+		
+		PUSH AX
+		PUSH BX
+		PUSH CX
+		PUSH DX 		;salva na pilha os registradores usados
+		
+		OR 	AX,AX 		;prepara comparação de sinal
+		
+		JGE PT1OCTAL 	;if AX >= 0, vai para PT1
+		
+		PUSH AX 		;como AX < 0, salva o número na pilha
+		MOV DL,'-'		;prepara o caracter ' - ' para sair
+		MOV AH,2h 		;prepara exibição
+		INT 21h 		;exibe ' - '
+		
+		POP AX 			;recupera o número
+		NEG AX 			;troca o sinal de AX (AX = - AX)
+		
+						;obtendo dígitos decimais e salvando-os temporariamente na pilha
+PT1OCTAL: 	XOR CX,CX 	;inicializa CX como contador de dígitos
+			MOV BX,8 	;BX possui o divisor
+PT2OCTAL: 	XOR DX,DX 	;inicializa o byte alto do dividendo em 0; restante é AX
+		
+		DIV BX 			;após a execução, AX = quociente; DX = resto
+		PUSH DX 		;salva o primeiro dígito decimal na pilha (1o. resto)
+		
+		INC CX 			;contador = contador + 1
+		OR 	AX,AX 		;quociente = 0 ? (teste de parada)
+		JNE PT2OCTAL 	;não, continuamos a repetir o laço
+		
+						;exibindo os dígitos decimais (restos) no monitor, na ordem inversa
+		MOV AH,2h 		;sim, termina o processo, prepara exibição dos restos
+PT3OCTAL: 
+	
+		POP DX 			;recupera dígito da pilha colocando-o em DL (DH = 0)
+		ADD DL,30h 		;converte valor binário do dígito para caracter ASCII
+		
+		INT 21h 		;exibe caracter
+		LOOP PT3OCTAL 	;realiza o loop ate que CX = 0
+		
+		POP DX 			;restaura o conteúdo dos registros
+		POP CX
+		POP BX
+		POP AX 			;restaura os conteúdos dos registradores
+		RET 			;retorna à rotina que chamou
+
+SAIOCTAL ENDP
 ;--------------------------------------------------------------------------------------;
 OP_SOMA PROC
 	ADD BX,N2
@@ -532,7 +632,7 @@ OP_DIVISAO PROC
 	MOV AX,N2
 	CWD
 	IDIV BX
-	MOV BX,AX
+	;MOV BX,AX
 	CALL SAIDAFINAL
 	JMP SAIR
 OP_DIVISAO ENDP
@@ -550,7 +650,6 @@ OP_MULT2 PROC
 		CALL SAIDAFINAL
 		JMP SAIR
 OP_MULT2 ENDP
-
 
 OP_DIV2 PROC
 	MOV AX,N2
@@ -585,6 +684,7 @@ OP_XOR PROC
 OP_XOR ENDP
 
 OP_NOT PROC
+	MOV BX,N2
 	NOT BX
 	CALL SAIDAFINAL
 	JMP SAIR
@@ -607,17 +707,19 @@ SAIDAFINAL PROC
 	H:
 		CMP OP,'3'
 		JE SH
-		JMP FIM
+		JMP SO
 	SH:
 		CALL SAIHEXA
+		JMP FIM
+		
+	SO:
+		CALL SAIOCTAL
 		JMP FIM
 	FIM:
 		RET
 SAIDAFINAL ENDP
 
 MENU1 PROC
-
-	
 	LEA DX, OPCAO
 	MOV AH, 9
 	INT 21H
@@ -631,9 +733,8 @@ MENU1 PROC
 	LEA DX, HEXA
 	INT 21H
 	
-	
-	
-	
+	LEA DX, OCTAL
+	INT 21H
 	
 	RET
 MENU1 ENDP
@@ -676,16 +777,12 @@ MENU2 PROC
 	RET
 MENU2 ENDP
 
-
 PULALINHA PROC
 
 	MOV AH,0Fh
 	INT 10H
 	MOV AH,0
 	INT 10H
-	
-	
-
 	
 	RET
 ENDP
