@@ -451,7 +451,7 @@ ENTHEXADECIMAL PROC
 	INT 21h
 
 	GETH:
-	CMP AL,0DH
+	CMP AL,0DH  ; vejo se é ENTER
 	JE SAIDAH
 	OR CH,CH
 	JZ SAIDAH
@@ -472,9 +472,7 @@ ENTHEXADECIMAL PROC
 	
 	SAIDAH:
 	MOV AX,BX
-	PUSH BX
-	PUSH CX
-	PUSH DX
+
 
 	RET
 ENTHEXADECIMAL ENDP
@@ -518,14 +516,27 @@ ENTOCTAL PROC
 	LEA DX,VAZIO
 	INT 21H
 
-	PUSH AX
 	PUSH BX
 	PUSH CX
 	PUSH DX
 	
+	XOR BX,BX
 	XOR CX,CX
 	
 	MOV AH,1H
+	INT 21H
+	
+	CMP AL,'-'
+	JE MENOSO
+	
+	CMP AL,'+'
+	JE MAISO
+	JMP NUMOCTA
+	
+	MENOSO:
+	MOV CX,1
+	
+	MAISO:
 	INT 21H
 	
 	NUMOCTA:
@@ -542,8 +553,11 @@ ENTOCTAL PROC
 	
 	CMP AL, 0DH
 	JNE NUMOCTA
-	
 	MOV AX, BX
+	CMP CX,1
+	JNE SAIDAOCTAL
+	
+	NEG AX
 	
 	
 
@@ -557,7 +571,7 @@ SAIDAOCTAL:
 ENTOCTAL ENDP
 
 SAIOCTAL PROC
-;exibe o conteudo de CX como OCTAL
+;exibe o conteudo de CX como OCTAL inteiro com sinal
 ;variaveis de entrada: AX -> valor binario equivalente do número OCTAL
 ;variaveis de saida: nehuma (exibição de dígitos direto no monitor de video)
 
@@ -565,39 +579,50 @@ SAIOCTAL PROC
 		LEA DX,VAZIO
 		INT 21H
 		
+	
 		MOV AX,BX
-		MOV CL,3
-		MOV CH,0
+	
+		PUSH AX
+		PUSH BX
+		PUSH CX
+		PUSH DX 		;salva na pilha os registradores usados
 		
-		LOOP1:
-		OR CL,CL
-		JZ ATT
-		ROL AX,1
-		INC CH
-		JC UMOCTA
-		SHL DX,1
-		DEC CL
-		JMP LOOP1
-		UMOCTA:
-		ADD DX,1
-		SHL DX,1
-		DEC CL
-		JMP LOOP1
+		OR 	AX,AX 	;prepara comparação de sinal
 		
+		JGE PT1O 	;if AX >= 0, vai para PT1
 		
-		ATT:
-			CMP CH,16
-			JE IMPRIME
-			MOV CL,3
-			JMP LOOP1
-			
-			
-			IMPRIME:
-			MOV AX,2H
-			INT 21H
+		PUSH AX 		;como AX < 0, salva o número na pilha
+		MOV DL,'-'	;prepara o caracter ' - ' para sair
+		MOV AH,2h 	;prepara exibição
+		INT 21h 	;exibe ' - '
 		
+		POP AX 		;recupera o número
+		NEG AX 		;troca o sinal de AX (AX = - AX)
 		
+		;obtendo dígitos decimais e salvando-os temporariamente na pilha
+PT1O: 	XOR CX,CX 	;inicializa CX como contador de dígitos
+		MOV BX,3 	;BX possui o divisor
+PT2O: 	XOR DX,DX 	;inicializa o byte alto do dividendo em 0; restante é AX
 		
+		DIV BX 		;após a execução, AX = quociente; DX = resto
+		PUSH DX 		;salva o primeiro dígito decimal na pilha (1o. resto)
+		
+		INC CX 		;contador = contador + 1
+		OR 	AX,AX 	;quociente = 0 ? (teste de parada)
+		JNE PT2O 	;não, continuamos a repetir o laço
+		
+		;exibindo os dígitos decimais (restos) no monitor, na ordem inversa
+		MOV AH,2h 	;sim, termina o processo, prepara exibição dos restos
+PT3O: 	POP DX 		;recupera dígito da pilha colocando-o em DL (DH = 0)
+		ADD DL,30h 	;converte valor binário do dígito para caracter ASCII
+		
+		INT 21h 	;exibe caracter
+		LOOP PT3O	;realiza o loop ate que CX = 0
+		
+		POP DX 		;restaura o conteúdo dos registros
+		POP CX
+		POP BX
+		POP AX 		;restaura os conteúdos dos registradores
 		RET 			;retorna à rotina que chamou
 
 SAIOCTAL ENDP
@@ -783,4 +808,5 @@ PULALINHA PROC
 ENDP
 	
 END
+//
 //
