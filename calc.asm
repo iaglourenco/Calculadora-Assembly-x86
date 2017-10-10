@@ -601,7 +601,7 @@ SAIOCTAL PROC
 		
 		;obtendo dígitos decimais e salvando-os temporariamente na pilha
 PT1O: 	XOR CX,CX 	;inicializa CX como contador de dígitos
-		MOV BX,3 	;BX possui o divisor
+		MOV BX,8 	;BX possui o divisor
 PT2O: 	XOR DX,DX 	;inicializa o byte alto do dividendo em 0; restante é AX
 		
 		DIV BX 		;após a execução, AX = quociente; DX = resto
